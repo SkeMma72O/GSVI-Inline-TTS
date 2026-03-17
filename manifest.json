@@ -1,0 +1,14 @@
+{
+    "display_name": "GSVI Inline TTS",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "愛",
+    "version": "1.0.0",
+    "homePage": "",
+    "description": "Inline TTS playback for chat messages using GPT-SoVITS",
+    "auto_update": true,
+    "generate_interceptor": "gsviTtsPromptInterceptor"
+}

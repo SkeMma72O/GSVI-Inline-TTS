@@ -1,0 +1,477 @@
+/* ═══════════════════════════════════════════════════════════════
+   GSVI Inline TTS — Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Inline TTS line in chat ─── */
+.gsvi-tts-line {
+    display: inline;
+    position: relative;
+}
+
+/* Inline audio control row */
+.gsvi-audio-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 10px;
+    margin: 4px 0 10px 0;
+    background: var(--SmartThemeBlurTintColor, rgba(0, 0, 0, 0.05));
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    clear: both;
+}
+
+.gsvi-inline-meta {
+    flex: 1;
+    font-size: 13px;
+    opacity: 0.9;
+    line-height: 1.4;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.gsvi-inline-char {
+    color: var(--gsvi-theme-color);
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gsvi-inline-emo {
+    opacity: 0.7;
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gsvi-inline-preview {
+    opacity: 0.8;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 150px;
+    border-left: 1px solid currentColor;
+    padding-left: 6px;
+}
+
+.gsvi-inline-btns {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Play and Regen bubble buttons */
+.gsvi-btn,
+.gsvi-btn.gsvi-regen-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50vw;
+    /* Pill/bubble shape */
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+    margin-left: 4px;
+    vertical-align: middle;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    /* Glassy bubble: transparent tinted background, theme color for icon */
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--gsvi-theme-color, #52a9af);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--gsvi-theme-color, #52a9af) 30%, transparent);
+}
+
+.gsvi-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.gsvi-btn:hover {
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--gsvi-theme-color, #52a9af) 20%, transparent);
+    border-color: var(--gsvi-theme-color, #52a9af);
+}
+
+.gsvi-btn:active {
+    transform: translateY(0) scale(0.93);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Play button states */
+.gsvi-state-loading {
+    cursor: default;
+    opacity: 0.75;
+    animation: gsvi-pulse-bubble 1.5s ease-in-out infinite;
+}
+
+.gsvi-state-ready {
+    background: color-mix(in srgb, var(--gsvi-theme-color, #52a9af) 15%, transparent);
+}
+
+.gsvi-state-playing {
+    animation: gsvi-pulse-bubble 1s ease-in-out infinite;
+    background: var(--gsvi-theme-color, #52a9af);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--gsvi-theme-color, #52a9af) 50%, transparent);
+}
+
+.gsvi-state-error {
+    background: rgba(224, 80, 80, 0.12);
+    color: #e05050;
+    border-color: rgba(224, 80, 80, 0.3);
+}
+
+
+.gsvi-btn.gsvi-dl-btn:hover {
+    opacity: 1;
+    background: rgba(128, 128, 128, 0.15) !important;
+}
+
+
+.gsvi-btn.gsvi-regen-btn:hover {
+    opacity: 1;
+    background: rgba(128, 128, 128, 0.15) !important;
+}
+
+.gsvi-btn.gsvi-regen-btn.gsvi-spinning {
+    animation: gsvi-spin 0.8s linear infinite;
+    opacity: 0.8;
+}
+
+@keyframes gsvi-pulse-bubble {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    }
+
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+}
+
+@keyframes gsvi-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ─── Custom Glassmorphism Modal ─── */
+.gsvi-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: gsvi-fade-in 0.2s ease-out;
+}
+
+.gsvi-modal-container {
+    background: var(--SmartThemeBlurTintColor, rgba(30, 30, 30, 0.7));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    width: 90vw;
+    max-width: 800px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: gsvi-slide-up 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: var(--SmartThemeBodyColor, #fff);
+}
+
+.gsvi-modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.gsvi-modal-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.gsvi-modal-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.gsvi-modal-close:hover {
+    opacity: 1;
+}
+
+.gsvi-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    gap: 20px;
+}
+
+.gsvi-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.gsvi-modal-btn {
+    min-width: 80px;
+    padding: 6px 16px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.gsvi-modal-btn-primary {
+    background: var(--gsvi-theme-color, #52a9af) !important;
+    color: white !important;
+    border: none !important;
+    min-width: 120px;
+}
+
+.gsvi-modal-btn-primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.gsvi-modal-btn-secondary {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.gsvi-modal-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+@keyframes gsvi-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes gsvi-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Glassy form controls */
+.gsvi-glass-input {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: inherit !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s !important;
+}
+
+.gsvi-glass-input:focus {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-color: var(--gsvi-theme-color, #52a9af) !important;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2) !important;
+}
+
+.gsvi-glass-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gsvi-glass-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.gsvi-reference-panel {
+    width: 200px;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gsvi-chip {
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 11px;
+    margin: 0 4px 4px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.gsvi-chip:hover {
+    background: var(--gsvi-theme-color, #52a9af);
+    color: white;
+}
+
+/* ─── Settings panel ─── */
+.gsvi-settings-section {
+    padding: 8px 0;
+}
+
+.gsvi-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.gsvi-settings-row label {
+    min-width: 90px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.gsvi-settings-row input[type="text"],
+.gsvi-settings-row select {
+    flex: 1;
+    min-width: 0;
+}
+
+.gsvi-settings-row .gsvi-fetch-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.gsvi-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.gsvi-slider-row input[type="range"] {
+    flex: 1;
+}
+
+.gsvi-slider-row .gsvi-slider-val {
+    min-width: 36px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.gsvi-settings-actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+
+.gsvi-settings-actions button {
+    flex: 1;
+    min-width: 100px;
+}
+
+.gsvi-settings-note {
+    font-size: 11px;
+    opacity: 0.6;
+    line-height: 1.4;
+    padding: 2px 0 6px;
+}
+
+/* Toggle switch */
+.gsvi-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.gsvi-toggle-row label {
+    font-size: 13px;
+}
+
+/* Modal Action Buttons */
+.gsvi-action-btn {
+    min-width: 120px !important;
+    padding: 4px 10px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease;
+}
+
+.gsvi-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.gsvi-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.gsvi-action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
