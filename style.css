@@ -371,6 +371,129 @@
     color: white;
 }
 
+/* ─── Prompt Manager Specific Layout ─── */
+.gsvi-prompt-manager-modal .gsvi-modal-body {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    padding: 24px;
+}
+
+.gsvi-prompt-list-section {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.gsvi-prompt-list-header {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.gsvi-prompt-list-note {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.gsvi-prompt-list-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.gsvi-prompt-list-container {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 8px;
+}
+
+.gsvi-reference-panel {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 20px;
+}
+
+.gsvi-generator-title {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.gsvi-generator-note {
+    font-size: 11px;
+    opacity: 0.6;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.gsvi-generator-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+    min-height: 0;
+}
+
+.gsvi-generator-btn {
+    flex-shrink: 0;
+    width: 100%;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+}
+
+/* ─── Mobile Adaption ─── */
+@media screen and (max-width: 768px) {
+    .gsvi-modal-container {
+        width: 95vw;
+        max-width: 95vw;
+        max-height: 95vh;
+        position: fixed;
+        top: 10px;
+    }
+
+    .gsvi-prompt-manager-modal .gsvi-modal-body {
+        flex-direction: column;
+        gap: 20px;
+        padding: 15px;
+    }
+
+    .gsvi-reference-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-left: 0;
+        padding-top: 20px;
+        flex: none;
+    }
+
+    .gsvi-prompt-list-section {
+        flex: none;
+    }
+
+    .gsvi-prompt-list-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .gsvi-modal-footer {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .gsvi-modal-btn {
+        flex: 1;
+    }
+}
+
 /* ─── Settings panel ─── */
 .gsvi-settings-section {
     padding: 8px 0;

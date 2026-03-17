@@ -1451,18 +1451,18 @@ function openPromptManagerModal() {
 
     const modalHtml = `
         <div id="gsvi-custom-modal" class="gsvi-modal-backdrop">
-            <div class="gsvi-modal-container" style="max-width: 800px; width: 90%;">
+            <div class="gsvi-modal-container gsvi-prompt-manager-modal">
                 <div class="gsvi-modal-header">
                     <h3 class="gsvi-modal-title">GSVI TTS 提示词管理器</h3>
                     <button class="gsvi-modal-close" id="gsvi-modal-close-btn"><i class="fa-solid fa-times"></i></button>
                 </div>
                 
-                <div class="gsvi-modal-body" style="gap: 24px;">
+                <div class="gsvi-modal-body">
                     <!-- Left: Prompt List -->
-                    <div style="flex: 1.2; display: flex; flex-direction: column;">
-                        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="font-size: 13px; opacity: 0.8;">自上而下注入。</div>
-                            <div style="display:flex; gap:6px;">
+                    <div class="gsvi-prompt-list-section">
+                        <div class="gsvi-prompt-list-header">
+                            <div class="gsvi-prompt-list-note">自上而下注入。</div>
+                            <div class="gsvi-prompt-list-actions">
                                 <button id="gsvi-prompt-add" class="menu_button gsvi-action-btn">
                                     <i class="fa-solid fa-plus"></i> 添加条目
                                 </button>
@@ -1471,21 +1471,21 @@ function openPromptManagerModal() {
                                 </button>
                             </div>
                         </div>
-                        <div id="gsvi-prompt-list" style="overflow-y: auto; flex: 1; padding-right: 8px;">
+                        <div id="gsvi-prompt-list" class="gsvi-prompt-list-container">
                             ${listHtml}
                         </div>
                     </div>
                     
                     <!-- Right: Reference & Generator Panel -->
-                    <div class="gsvi-reference-panel" style="flex: 0.8; display: flex; flex-direction: column; overflow: hidden;">
-                        <h4 style="margin:0 0 4px 0; font-size:14px; opacity:0.9; flex-shrink:0;">提示词生成器</h4>
-                        <div style="font-size:11px; opacity:0.6; margin-bottom:10px; flex-shrink:0;">点选角色（蓝）和情感（黄），然后点击下方按钮生成。</div>
+                    <div class="gsvi-reference-panel">
+                        <h4 class="gsvi-generator-title">提示词生成器</h4>
+                        <div class="gsvi-generator-note">点选角色（蓝）和情感（黄），然后点击下方按钮生成。</div>
                         
-                        <div id="gsvi-generator-panel" style="flex: 1; overflow-y: auto; padding-right: 4px; min-height: 0;">
+                        <div id="gsvi-generator-panel" class="gsvi-generator-list">
                             ${genPanelHtml}
                         </div>
 
-                        <button id="gsvi-prompt-generate" class="menu_button" style="flex-shrink:0; width: 100%; margin-top: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+                        <button id="gsvi-prompt-generate" class="menu_button gsvi-generator-btn">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> 生成角色情感提示词
                         </button>
                     </div>
