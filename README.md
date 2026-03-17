@@ -46,3 +46,10 @@
 
 ## 开发者与维护
 请点点star支持开发者
+
+## 感谢
+GPT-SoVITS开发者：花儿不哭
+模型训练者：红血球AE3803 白菜工厂1145号员工
+推理特化包适配 & 在线推理：AI-Hobbyist
+https://github.com/RVC-Boss/GPT-SoVITS
+https://github.com/AI-Hobbyist/GPT-SoVITS-Inference
