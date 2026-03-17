@@ -5,7 +5,7 @@
  */
 
 import { extension_settings, getContext } from "../../../extensions.js";
-import { saveSettingsDebounced, eventSource, event_types, setExtensionPrompt, extension_prompt_types } from "../../../../script.js";
+import { saveSettingsDebounced, saveChatDebounced, eventSource, event_types, setExtensionPrompt, extension_prompt_types } from "../../../../script.js";
 import { Popup, POPUP_TYPE, POPUP_RESULT } from "../../../../scripts/popup.js";
 
 // ═══════════════════════════════════════════════════════════════
@@ -55,7 +55,7 @@ const defaultSettings = {
 // Runtime State
 // ═══════════════════════════════════════════════════════════════
 
-/** @type {Map<string, { blob: Blob, url: string }>} hash → audio data */
+/** @type {Map<string, { blob?: Blob, url: string, isServerPath?: boolean }>} hash → audio data */
 const audioCache = new Map();
 
 /** @type {Map<string, Promise>} hash → pending generation promise */
@@ -394,9 +394,12 @@ async function generateWithCache(text, voiceId, emotion, langOverride) {
             // 2. Optionally upload to SillyTavern server
             const s = getSettings();
             if (s.saveToServer && result.blob) {
-                uploadAudioToST(result.blob, text, voiceId, emotion).catch(err => {
+                try {
+                    const serverPath = await uploadAudioToST(result.blob, text, voiceId, emotion);
+                    result.serverPath = serverPath;
+                } catch (err) {
                     console.warn(`${LOG} Server upload failed:`, err);
-                });
+                }
             }
             return result;
         })
@@ -582,12 +585,25 @@ async function processMessageElement(mesElement, chatMsg) {
         const regenBtnId = `${lineId}-regen`;
 
         const voiceId = resolveVoiceForChar(charName);
+        const key = hashKey(dialogue, voiceId, emotion);
+
+        let isCached = audioCache.has(key);
+        let serverPath = null;
+
+        // Check metadata for server path if not in local memory
+        if (chatMsg && chatMsg.extra && chatMsg.extra.gsvi_tts && chatMsg.extra.gsvi_tts[key]) {
+            serverPath = chatMsg.extra.gsvi_tts[key];
+            if (!isCached) {
+                // Register server path in memory cache so play button works immediately
+                audioCache.set(key, { url: serverPath, isServerPath: true });
+                isCached = true;
+            }
+        }
 
         if (voiceId) {
-            const isCached = audioCache.has(hashKey(dialogue, voiceId, emotion));
-            generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId, emotion, charName, noVoice: false, isCached, langOverride });
+            generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId, emotion, charName, noVoice: false, isCached, langOverride, key });
         } else {
-            generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId: "", emotion, charName, noVoice: true, isCached: false, langOverride });
+            generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId: "", emotion, charName, noVoice: true, isCached: false, langOverride, key });
         }
     }
 
@@ -596,13 +612,13 @@ async function processMessageElement(mesElement, chatMsg) {
     // Pre-warm IDB cache so previously generated lines show as ready immediately
     const keysToWarm = generations
         .filter(g => !g.noVoice)
-        .map(g => hashKey(g.text, g.voiceId, g.emotion));
+        .map(g => g.key);
     await warmCacheFromIDB(keysToWarm);
 
     // Update isCached after IDB warm
     for (const gen of generations) {
         if (!gen.noVoice) {
-            gen.isCached = audioCache.has(hashKey(gen.text, gen.voiceId, gen.emotion));
+            gen.isCached = audioCache.has(gen.key);
         }
     }
 
@@ -621,7 +637,7 @@ async function processMessageElement(mesElement, chatMsg) {
             ? '<i class="fa-solid fa-play"></i>'
             : '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-        const cacheDataKey = gen.isCached ? `data-cache-key="${hashKey(gen.text, gen.voiceId, gen.emotion)}"` : '';
+        const cacheDataKey = gen.isCached ? `data-cache-key="${gen.key}"` : '';
 
         lineDiv.innerHTML = `
             <div class="gsvi-inline-meta">
@@ -659,15 +675,22 @@ async function processMessageElement(mesElement, chatMsg) {
             mesTextEl.appendChild(lineDiv);
         }
 
-        bindLineEvents(gen);
+        bindLineEvents(gen, chatMsg);
 
         // Bind download button
         const dlBtn = document.getElementById(`${gen.playBtnId}-dl`);
         if (dlBtn) {
             dlBtn.addEventListener("click", async () => {
-                const key = hashKey(gen.text, gen.voiceId, gen.emotion);
-                let blob = audioCache.get(key)?.blob;
-                if (!blob) blob = await idbGet(key);
+                let data = audioCache.get(gen.key);
+                let blob = data?.blob;
+                if (!blob && data?.url) {
+                    // It's a server path, fetch it
+                    try {
+                        const resp = await fetch(data.url);
+                        blob = await resp.blob();
+                    } catch (err) { console.error(`${LOG} Fetch failed`, err); }
+                }
+                if (!blob) blob = await idbGet(gen.key);
                 if (!blob) { toastr.warning("尚未生成音频", "GSVI TTS"); return; }
 
                 // Sanitize filename parts: keep letters, numbers, underscores, and dashes
@@ -678,7 +701,7 @@ async function processMessageElement(mesElement, chatMsg) {
 
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(blob);
-                a.download = `gsvi_${safeName}_${safeEmo}_${safeText}_${key}.wav`;
+                a.download = `gsvi_${safeName}_${safeEmo}_${safeText}_${gen.key}.wav`;
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(a.href), 5000);
             });
@@ -686,7 +709,7 @@ async function processMessageElement(mesElement, chatMsg) {
 
         if (!gen.noVoice) {
             if (!gen.isCached) {
-                triggerGeneration(gen);
+                triggerGeneration(gen, chatMsg);
             }
         } else {
             const btn = document.getElementById(gen.playBtnId);
@@ -700,7 +723,7 @@ async function processMessageElement(mesElement, chatMsg) {
     }
 }
 
-function bindLineEvents(gen) {
+function bindLineEvents(gen, chatMsg) {
     const playBtn = document.getElementById(gen.playBtnId);
     const regenBtn = document.getElementById(gen.regenBtnId);
 
@@ -732,13 +755,20 @@ function bindLineEvents(gen) {
             }
 
             // Remove from cache
-            const oldKey = playBtn?.dataset.cacheKey || hashKey(gen.text, gen.voiceId, gen.emotion);
+            const oldKey = gen.key;
             if (oldKey) {
                 if (audioCache.has(oldKey)) {
-                    URL.revokeObjectURL(audioCache.get(oldKey).url);
+                    const data = audioCache.get(oldKey);
+                    if (data.url && data.url.startsWith("blob:")) URL.revokeObjectURL(data.url);
                     audioCache.delete(oldKey);
                 }
                 await idbDelete(oldKey);
+            }
+
+            // Clear metadata for this key
+            if (chatMsg && chatMsg.extra && chatMsg.extra.gsvi_tts && chatMsg.extra.gsvi_tts[oldKey]) {
+                delete chatMsg.extra.gsvi_tts[oldKey];
+                saveChatDebounced();
             }
 
             // Stop if currently playing this line
@@ -765,14 +795,14 @@ function bindLineEvents(gen) {
             // Spin regen button
             regenBtn.classList.add("gsvi-spinning");
 
-            triggerGeneration(gen).finally(() => {
+            triggerGeneration(gen, chatMsg).finally(() => {
                 regenBtn.classList.remove("gsvi-spinning");
             });
         });
     }
 }
 
-async function triggerGeneration(gen) {
+async function triggerGeneration(gen, chatMsg) {
     try {
         const result = await generateWithCache(gen.text, gen.voiceId, gen.emotion, gen.langOverride);
         const btn = document.getElementById(gen.playBtnId);
@@ -782,6 +812,15 @@ async function triggerGeneration(gen) {
             btn.classList.add("gsvi-state-ready");
             btn.innerHTML = '<i class="fa-solid fa-play"></i>';
             btn.title = "播放";
+        }
+
+        // Save server path to chat metadata
+        if (result.serverPath && chatMsg) {
+            if (!chatMsg.extra) chatMsg.extra = {};
+            if (!chatMsg.extra.gsvi_tts) chatMsg.extra.gsvi_tts = {};
+            chatMsg.extra.gsvi_tts[result.key] = result.serverPath;
+            saveChatDebounced();
+            console.log(`${LOG} Saved audio path to chat metadata: ${result.serverPath}`);
         }
 
         // Enable download button after generation completes
@@ -1133,7 +1172,7 @@ function bindSettingsEvents() {
     $("#gsvi_clear_cache").on("click", function () {
         // Revoke all blob URLs
         for (const [, data] of audioCache) {
-            if (data.url) URL.revokeObjectURL(data.url);
+            if (data.url && data.url.startsWith("blob:")) URL.revokeObjectURL(data.url);
         }
         audioCache.clear();
         pendingGenerations.clear();
