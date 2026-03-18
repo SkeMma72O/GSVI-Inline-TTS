@@ -71,7 +71,7 @@ async function fetchVoicesGSVI(endpoint) {
                 }
 
                 allVoices.push({
-                    id: modelName,
+                    id: `${modelName}|${version}`,
                     name: `${modelName} [${version}]`,
                     language: promptLang || "auto",
                     emotions,
@@ -147,13 +147,14 @@ async function synthesizeAdapter(text, endpoint, settings) {
 }
 
 async function synthesizeGSVI(text, endpoint, settings) {
-    const voiceId = settings._voiceId || settings.voiceId || "";
+    // voiceId here is modelName|version
+    const [modelName, version] = (settings._voiceId || settings.voiceId || "").split("|");
     const emotion = settings._emotion || settings.emotion || "默认";
 
     const body = {
-        model: `GSVI-${settings.voiceVersion || settings._voiceVersion || "v2Pro"}`,
+        model: `GSVI-${settings.voiceVersion || settings._voiceVersion || version || "v2Pro"}`,
         input: text,
-        voice: voiceId,
+        voice: modelName,
         response_format: "wav",
         speed: settings.speed || 1,
         other_params: {
@@ -208,6 +209,11 @@ export async function generateAudio(text, voiceId, emotion, langOverride) {
     const allVoices = fetchedVoices.length > 0 ? fetchedVoices : (s.cachedVoices || []);
     let synthVoice = allVoices.find(v => v.id === voiceId);
 
+    // Fallback logic for old IDs (simple model names)
+    if (!synthVoice && voiceId && !voiceId.includes("|")) {
+        synthVoice = allVoices.find(v => v.id.startsWith(`${voiceId}|`));
+    }
+
     // Fallback if the requested voiceId doesn't exist in our known list
     if (!synthVoice && s.voiceId) {
         console.warn(`${LOG} Voice "${voiceId}" not found, falling back to default "${s.voiceId}"`);
@@ -223,7 +229,7 @@ export async function generateAudio(text, voiceId, emotion, langOverride) {
 
     const synthSettings = {
         ...s,
-        _voiceId: voiceId,
+        _voiceId: synthVoice?.id || voiceId,
         _emotion: emotion,
         _voiceVersion: synthVoice?.version,
         promptLang: resolvedPromptLang,

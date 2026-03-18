@@ -14,6 +14,11 @@ export function buildSettingsHtml() {
     const s = getSettings();
     return `
     <div class="gsvi-settings-section">
+        <div class="gsvi-toggle-row" style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <label style="font-size: 14px; font-weight: bold;">启用 GSVI 插件</label>
+            <input id="gsvi_enabled" type="checkbox" ${s.enabled ? "checked" : ""} />
+        </div>
+
         <div class="gsvi-settings-row">
             <label>API 端点</label>
             <input id="gsvi_endpoint" type="text" class="text_pole" value="${s.endpoint}" placeholder="http://localhost:8001" />
@@ -163,6 +168,13 @@ export function buildSettingsHtml() {
 
 export function bindSettingsEvents() {
     const s = getSettings();
+
+    // Global Enabled
+    $("#gsvi_enabled").on("change", function () {
+        s.enabled = $(this).prop("checked");
+        saveSettings();
+        toastr.info(s.enabled ? "GSVI TTS 已启用" : "GSVI TTS 已禁用 (刷新页面生效)");
+    });
 
     // Endpoint
     $("#gsvi_endpoint").on("change", function () {
@@ -467,7 +479,7 @@ function openPromptManagerModal() {
 
     let listHtml = "";
     s.promptList.forEach((p) => {
-        listHtml += createPromptItemHtml(p.id, p.name, p.content);
+        listHtml += createPromptItemHtml(p.id, p.name, p.content, p.enabled);
     });
 
     // Build Reference Panel Data
@@ -636,8 +648,9 @@ function openPromptManagerModal() {
             const id = $(el).data("id") || Date.now().toString();
             const name = $(el).find(".gsvi-prompt-name").val() || "Untitled";
             const content = $(el).find(".gsvi-prompt-content").val() || "";
+            const enabled = $(el).find(".gsvi-prompt-enabled").prop("checked");
             if (content.trim()) {
-                newList.push({ id, name, content });
+                newList.push({ id, name, content, enabled });
             }
         });
         s.promptList = newList;
@@ -674,12 +687,13 @@ function openPromptManagerModal() {
     initDragAndDrop();
 }
 
-function createPromptItemHtml(id, name, content) {
+function createPromptItemHtml(id, name, content, enabled = true) {
     return `
         <div class="gsvi-glass-item gsvi-prompt-item" data-id="${id}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <i class="fa-solid fa-grip-vertical gsvi-drag-handle" style="cursor: grab; color: rgba(255,255,255,0.4); font-size: 16px;"></i>
+                    <input type="checkbox" class="gsvi-prompt-enabled" ${enabled ? "checked" : ""} title="启用/禁用此条目" />
                     <input type="text" class="gsvi-glass-input gsvi-prompt-name" value="${name.replace(/"/g, '&quot;')}" placeholder="Name" style="font-weight: bold; width: 160px;" />
                 </div>
                 <button class="menu_button gsvi-prompt-del" title="删除" style="padding: 6px 10px; min-width: auto; background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220,38,38,0.4); border-radius: 6px; color: #fca5a5;"><i class="fa-solid fa-trash"></i></button>

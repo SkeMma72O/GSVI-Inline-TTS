@@ -252,6 +252,7 @@ globalThis.gsviTtsPromptInterceptor = async function (chat, contextSize, abort, 
     if (!s.injectEnabled || !s.promptList || s.promptList.length === 0) return;
 
     const combinedContent = s.promptList
+        .filter(p => p.enabled !== false) // Filter only enabled ones
         .map(p => p.content.trim())
         .filter(Boolean)
         .join("\n\n");

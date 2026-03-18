@@ -28,7 +28,8 @@ export const defaultSettings = {
         {
             id: "default",
             name: "Default Formatting",
-            content: "" // Populated at runtime from default_prompt.txt
+            content: "", // Populated at runtime from default_prompt.txt
+            enabled: true
         }
     ],
     injectEnabled: false,

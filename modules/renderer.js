@@ -18,8 +18,8 @@ let lineCounter = 0;
 export function stopCurrentPlayback() {
     if (currentAudio) {
         currentAudio.pause();
-        currentAudio.currentTime = 0;
-        currentAudio = null;
+        // We don't null currentAudio here anymore if we want to resume
+        // currentAudio = null; 
     }
     if (currentPlayingBtnId) {
         const btn = document.getElementById(currentPlayingBtnId);
@@ -29,24 +29,78 @@ export function stopCurrentPlayback() {
             btn.innerHTML = '<i class="fa-solid fa-play"></i>';
             btn.title = "播放";
         }
+        // Don't null currentPlayingBtnId if we are just pausing
+    }
+}
+
+/**
+ * Reset playback state completely (stop and clear)
+ */
+export function resetPlayback() {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    if (currentPlayingBtnId) {
+        const btn = document.getElementById(currentPlayingBtnId);
+        const lineDiv = btn?.closest(".gsvi-audio-inline");
+        if (btn) {
+            btn.classList.remove("gsvi-state-playing");
+            btn.classList.add("gsvi-state-ready");
+            btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        }
+        if (lineDiv) {
+            lineDiv.style.setProperty('--gsvi-progress', '0%');
+        }
         currentPlayingBtnId = null;
     }
 }
 
 export function playAudioBlob(blobUrl, playBtnId) {
-    stopCurrentPlayback();
+    const btn = document.getElementById(playBtnId);
+    const lineDiv = btn?.closest(".gsvi-audio-inline");
+
+    // If same audio and paused, just resume
+    if (currentPlayingBtnId === playBtnId && currentAudio && currentAudio.paused) {
+        currentAudio.play();
+        btn.classList.remove("gsvi-state-ready");
+        btn.classList.add("gsvi-state-playing");
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        btn.title = "暂停";
+        return;
+    }
+
+    // Otherwise, start new playback
+    resetPlayback();
 
     const audio = new Audio(blobUrl);
     currentAudio = audio;
     currentPlayingBtnId = playBtnId;
 
-    const btn = document.getElementById(playBtnId);
     if (btn) {
         btn.classList.remove("gsvi-state-ready");
         btn.classList.add("gsvi-state-playing");
-        btn.innerHTML = "⏸";
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         btn.title = "暂停";
     }
+
+    // Progress and Duration
+    audio.addEventListener("loadedmetadata", () => {
+        const durationEl = lineDiv?.querySelector(".gsvi-duration");
+        if (durationEl) {
+            const mins = Math.floor(audio.duration / 60);
+            const secs = Math.floor(audio.duration % 60);
+            durationEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+    });
+
+    audio.addEventListener("timeupdate", () => {
+        if (lineDiv) {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            lineDiv.style.setProperty('--gsvi-progress', `${progress}%`);
+        }
+    });
 
     audio.onended = () => {
         if (btn) {
@@ -54,6 +108,9 @@ export function playAudioBlob(blobUrl, playBtnId) {
             btn.classList.add("gsvi-state-ready");
             btn.innerHTML = '<i class="fa-solid fa-play"></i>';
             btn.title = "播放";
+        }
+        if (lineDiv) {
+            lineDiv.style.setProperty('--gsvi-progress', '0%');
         }
         currentAudio = null;
         currentPlayingBtnId = null;
@@ -63,7 +120,7 @@ export function playAudioBlob(blobUrl, playBtnId) {
         if (btn) {
             btn.classList.remove("gsvi-state-playing");
             btn.classList.add("gsvi-state-error");
-            btn.innerHTML = "⚠";
+            btn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
             btn.title = "播放失败";
         }
         currentAudio = null;
@@ -89,7 +146,7 @@ function resolveVoiceForChar(charName) {
     }
 
     // 2. Check if the character name exactly matches one of the known voice IDs or names
-    const matchingVoice = allVoices.find(v => v.id === charName || v.name === charName);
+    const matchingVoice = allVoices.find(v => v.id === charName || v.name === charName || v.id.split('|')[0] === charName);
 
     if (matchingVoice) {
         return matchingVoice.id;
@@ -178,21 +235,25 @@ export async function processMessageElement(mesElement, chatMsg) {
         const cacheDataKey = gen.isCached ? `data-cache-key="${gen.key}"` : '';
 
         lineDiv.innerHTML = `
+            <div class="gsvi-progress-bar"></div>
             <div class="gsvi-inline-meta">
                 <b class="gsvi-inline-char">${gen.charName}</b>
                 <span class="gsvi-inline-emo">[${gen.emotion}]</span>
                 <span class="gsvi-inline-preview" title="${gen.text.replace(/"/g, '&quot;')}">${gen.text}</span>
             </div>
-            <div class="gsvi-inline-btns">
-                <button id="${gen.playBtnId}" class="gsvi-btn ${playStateClass}" title="${gen.isCached ? '播放' : '生成中...'}" ${cacheDataKey}>
-                    ${playBtnIcon}
-                </button>
-                <button id="${gen.playBtnId}-dl" class="gsvi-btn gsvi-dl-btn" title="下载音频" ${gen.isCached ? "" : 'disabled style="opacity:0.5;cursor:not-allowed;"'}>
-                    <i class="fa-solid fa-download"></i>
-                </button>
-                <button id="${gen.regenBtnId}" class="gsvi-btn gsvi-regen-btn" title="单句重生成">
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                </button>
+            <div class="gsvi-inline-right">
+                <span class="gsvi-duration">0:00</span>
+                <div class="gsvi-inline-btns">
+                    <button id="${gen.playBtnId}" class="gsvi-btn ${playStateClass}" title="${gen.isCached ? '播放' : '生成中...'}" ${cacheDataKey}>
+                        ${playBtnIcon}
+                    </button>
+                    <button id="${gen.playBtnId}-dl" class="gsvi-btn gsvi-dl-btn" title="下载音频" ${gen.isCached ? "" : 'disabled style="opacity:0.5;cursor:not-allowed;"'}>
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button id="${gen.regenBtnId}" class="gsvi-btn gsvi-regen-btn" title="单句重生成">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
             </div>
         `;
 
@@ -248,13 +309,27 @@ export async function processMessageElement(mesElement, chatMsg) {
         if (!gen.noVoice) {
             if (!gen.isCached) {
                 triggerGeneration(gen, chatMsg);
+            } else {
+                // If cached, try to get duration from audio
+                const data = audioCache.get(gen.key);
+                if (data && data.url) {
+                    const tempAudio = new Audio(data.url);
+                    tempAudio.addEventListener("loadedmetadata", () => {
+                        const dEl = lineDiv.querySelector(".gsvi-duration");
+                        if (dEl) {
+                            const m = Math.floor(tempAudio.duration / 60);
+                            const s = Math.floor(tempAudio.duration % 60);
+                            dEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                        }
+                    });
+                }
             }
         } else {
             const btn = document.getElementById(gen.playBtnId);
             if (btn) {
                 btn.classList.remove("gsvi-state-loading");
                 btn.classList.add("gsvi-state-error");
-                btn.innerHTML = "⚠";
+                btn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
                 btn.title = `未配置角色 "${gen.charName}" 的语音`;
             }
         }
