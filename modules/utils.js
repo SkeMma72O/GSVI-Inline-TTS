@@ -26,7 +26,7 @@ export function detectFormat(endpoint, override) {
  */
 export function resolveUrl(url) {
     if (window.location.protocol === "https:" && url.startsWith("http:")) {
-        return `/proxy/${url.replace(/^http:\/\//, "")}`;
+        return `/proxy/${url}`;
     }
     return url;
 }
