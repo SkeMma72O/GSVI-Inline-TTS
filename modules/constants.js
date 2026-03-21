@@ -2,7 +2,7 @@
  * GSVI Inline TTS Extension Constants and Default Settings
  */
 
-export const EXT_NAME = "GSVI-Extension";
+export const EXT_NAME = "GSVI-Inline-TTS";
 export const SETTINGS_KEY = "gsvi_inline_tts";
 export const LOG = "[GSVI-TTS]";
 

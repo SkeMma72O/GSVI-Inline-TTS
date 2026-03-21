@@ -2,21 +2,21 @@
  * GSVI Inline TTS Extension UI and Interactivity
  */
 
-import { saveSettingsDebounced } from "../../../../../script.js";
-import { LOG, DEFAULT_PREVIEW_TEXT } from "./constants.js";
-import { getSettings, saveSettings } from "./settings.js";
-import { fetchedVoices, fetchVoiceList } from "./api.js";
-import { generateAudio } from "./api.js";
-import { audioCache, pendingGenerations } from "./cache.js";
-import { playAudioBlob, stopCurrentPlayback } from "./renderer.js";
+import { saveSettingsDebounced } from '../../../../../script.js';
+import { LOG, DEFAULT_PREVIEW_TEXT } from './constants.js';
+import { getSettings, saveSettings } from './settings.js';
+import { fetchedVoices, fetchVoiceList } from './api.js';
+import { generateAudio } from './api.js';
+import { audioCache, pendingGenerations } from './cache.js';
+import { playAudioBlob, stopCurrentPlayback } from './renderer.js';
 
 export function buildSettingsHtml() {
-    const s = getSettings();
-    return `
+  const s = getSettings();
+  return `
     <div class="gsvi-settings-section">
         <div class="gsvi-toggle-row" style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
             <label style="font-size: 14px; font-weight: bold;">启用 GSVI 插件</label>
-            <input id="gsvi_enabled" type="checkbox" ${s.enabled ? "checked" : ""} />
+            <input id="gsvi_enabled" type="checkbox" ${s.enabled ? 'checked' : ''} />
         </div>
 
         <div class="gsvi-settings-row">
@@ -27,17 +27,17 @@ export function buildSettingsHtml() {
         <div class="gsvi-settings-row">
             <label>API 格式</label>
             <select id="gsvi_api_format" class="text_pole">
-                <option value="auto" ${s.apiFormat === "auto" ? "selected" : ""}>自动检测 (按端口)</option>
-                <option value="adapter" ${s.apiFormat === "adapter" ? "selected" : ""}>Adapter (9881)</option>
-                <option value="gsvi" ${s.apiFormat === "gsvi" ? "selected" : ""}>GSVI Inference (8000)</option>
+                <option value="auto" ${s.apiFormat === 'auto' ? 'selected' : ''}>自动检测 (按端口)</option>
+                <option value="adapter" ${s.apiFormat === 'adapter' ? 'selected' : ''}>Adapter (9881)</option>
+                <option value="gsvi" ${s.apiFormat === 'gsvi' ? 'selected' : ''}>GSVI Inference (8000)</option>
             </select>
         </div>
-        <div class="gsvi-settings-note">Adapter: 端口 9881，POST /。GSVI: 端口 8000，POST /v1/audio/speech。</div>
+        <div class="gsvi-settings-note">Adapter: 端口 9881，POST /(暂未适配)。GSVI: 端口 8000，POST /v1/audio/speech。</div>
 
         <div class="gsvi-settings-row">
             <label>默认角色</label>
             <select id="gsvi_default_voice" class="text_pole" style="flex:1;min-width:0;">
-                <option value="">点击获取按钮加载模型列表</option>
+                <option value="">${s.voiceId ? s.voiceId + ' (上次保存)' : '点击获取按钮加载模型列表'}</option>
             </select>
             <button id="gsvi_fetch_voices" class="menu_button gsvi-fetch-btn">
                 <i class="fa-solid fa-rotate"></i> 获取
@@ -55,30 +55,44 @@ export function buildSettingsHtml() {
         <div class="gsvi-settings-row">
             <label>文本语言</label>
             <select id="gsvi_text_lang" class="text_pole">
-                ${["中文", "英语", "日语", "粤语", "韩语", "中英混合", "日英混合", "粤英混合", "韩英混合", "多语种混合", "多语种混合(粤语)"]
-            .map(l => `<option value="${l}" ${s.textLang === l ? "selected" : ""}>${l}</option>`).join("")}
+                ${[
+                  '中文',
+                  '英语',
+                  '日语',
+                  '粤语',
+                  '韩语',
+                  '中英混合',
+                  '日英混合',
+                  '粤英混合',
+                  '韩英混合',
+                  '多语种混合',
+                  '多语种混合(粤语)',
+                ]
+                  .map(l => `<option value="${l}" ${s.textLang === l ? 'selected' : ''}>${l}</option>`)
+                  .join('')}
             </select>
         </div>
 
         <div class="gsvi-settings-row">
             <label>参考语言</label>
             <select id="gsvi_prompt_lang" class="text_pole">
-                <option value="">(请先获取声音列表)</option>
+                <option value="">${s.promptLang ? s.promptLang + ' (上次保存)' : '(请先获取声音列表)'}</option>
             </select>
         </div>
 
         <div class="gsvi-settings-row">
             <label>默认情绪</label>
             <select id="gsvi_emotion" class="text_pole">
-                <option value="">(请先获取声音列表)</option>
+                <option value="">${s.emotion ? s.emotion + ' (上次保存)' : '(请先获取声音列表)'}</option>
             </select>
         </div>
 
         <div class="gsvi-settings-row">
             <label>文本切分</label>
             <select id="gsvi_split_method" class="text_pole">
-                ${["不切", "凑四句一切", "凑50字一切", "按中文句号。切", "按英文句号.切", "按标点符号切"]
-            .map(m => `<option value="${m}" ${(s.textSplitMethod || "") === m ? "selected" : ""}>${m}</option>`).join("")}
+                ${['不切', '凑四句一切', '凑50字一切', '按中文句号。切', '按英文句号.切', '按标点符号切']
+                  .map(m => `<option value="${m}" ${(s.textSplitMethod || '') === m ? 'selected' : ''}>${m}</option>`)
+                  .join('')}
             </select>
         </div>
 
@@ -100,7 +114,7 @@ export function buildSettingsHtml() {
         </div>
         <div class="gsvi-toggle-row">
             <label>保存音频到服务器</label>
-            <input id="gsvi_save_to_server" type="checkbox" ${s.saveToServer ? "checked" : ""} />
+            <input id="gsvi_save_to_server" type="checkbox" ${s.saveToServer ? 'checked' : ''} />
         </div>
 
         <hr />
@@ -110,13 +124,13 @@ export function buildSettingsHtml() {
         </div>
         <div class="gsvi-toggle-row">
             <label>开启提示词注入</label>
-            <input id="gsvi_inject_enabled" type="checkbox" ${s.injectEnabled ? "checked" : ""} />
+            <input id="gsvi_inject_enabled" type="checkbox" ${s.injectEnabled ? 'checked' : ''} />
         </div>
         <div class="gsvi-settings-row">
             <label>注入位置</label>
             <select id="gsvi_inject_position" class="text_pole">
-                <option value="1" ${s.injectPosition == 1 ? "selected" : ""}>D0</option>
-                <option value="2" ${s.injectPosition == 2 ? "selected" : ""}>指定深度</option>
+                <option value="1" ${s.injectPosition == 1 ? 'selected' : ''}>D0</option>
+                <option value="2" ${s.injectPosition == 2 ? 'selected' : ''}>指定深度</option>
             </select>
         </div>
         <div class="gsvi-settings-row" id="gsvi_depth_row" style="${s.injectPosition == 2 ? '' : 'display:none;'}">
@@ -140,13 +154,13 @@ export function buildSettingsHtml() {
         <div class="gsvi-settings-row">
             <label>试听角色</label>
             <select id="gsvi_test_voice" class="text_pole">
-                <option value="">(请先获取模型)</option>
+                <option value="">${s.testVoiceId ? s.testVoiceId + ' (上次保存)' : '(请先获取模型)'}</option>
             </select>
         </div>
         <div class="gsvi-settings-row">
             <label>试听情绪</label>
             <select id="gsvi_test_emotion" class="text_pole">
-                <option value="">(无可用情绪)</option>
+                <option value="">${s.testEmotion ? s.testEmotion + ' (上次保存)' : '(无可用情绪)'}</option>
             </select>
         </div>
 
@@ -167,351 +181,359 @@ export function buildSettingsHtml() {
 }
 
 export function bindSettingsEvents() {
-    const s = getSettings();
+  const s = getSettings();
 
-    // Global Enabled
-    $("#gsvi_enabled").on("change", function () {
-        s.enabled = $(this).prop("checked");
-        saveSettings();
-        toastr.info(s.enabled ? "GSVI TTS 已启用" : "GSVI TTS 已禁用 (刷新页面生效)");
-    });
+  // Global Enabled
+  $('#gsvi_enabled').on('change', function () {
+    s.enabled = $(this).prop('checked');
+    saveSettings();
+    toastr.info(s.enabled ? 'GSVI TTS 已启用' : 'GSVI TTS 已禁用 (刷新页面生效)');
+  });
 
-    // Endpoint
-    $("#gsvi_endpoint").on("change", function () {
-        s.endpoint = $(this).val().trim();
-        saveSettings();
-    });
+  // Endpoint
+  $('#gsvi_endpoint').on('change', function () {
+    s.endpoint = $(this).val().trim();
+    saveSettings();
+  });
 
-    // API format
-    $("#gsvi_api_format").on("change", function () {
-        s.apiFormat = $(this).val();
-        saveSettings();
-    });
+  // API format
+  $('#gsvi_api_format').on('change', function () {
+    s.apiFormat = $(this).val();
+    saveSettings();
+  });
 
-    // Default Voice
-    $("#gsvi_default_voice").on("change", function () {
-        s.voiceId = $(this).val();
-        const voice = fetchedVoices.find(v => v.id === s.voiceId) || s.cachedVoices.find(v => v.id === s.voiceId);
-        if (voice && voice.version) {
-            s.voiceVersion = voice.version;
-        }
-        saveSettings();
-        updatePromptLangDropdown(s.voiceId);
-        updateEmotionSelect(s.voiceId, "gsvi_emotion", "emotion");
-    });
+  // Default Voice
+  $('#gsvi_default_voice').on('change', function () {
+    s.voiceId = $(this).val();
+    const voice = fetchedVoices.find(v => v.id === s.voiceId) || s.cachedVoices.find(v => v.id === s.voiceId);
+    if (voice && voice.version) {
+      s.voiceVersion = voice.version;
+    }
+    saveSettings();
+    updatePromptLangDropdown(s.voiceId);
+    updateEmotionSelect(s.voiceId, 'gsvi_emotion', 'emotion');
+  });
 
-    // Test Voice
-    $("#gsvi_test_voice").on("change", function () {
-        s.testVoiceId = $(this).val();
-        saveSettings();
-        updateEmotionSelect(s.testVoiceId, "gsvi_test_emotion", "testEmotion");
-    });
+  // Test Voice
+  $('#gsvi_test_voice').on('change', function () {
+    s.testVoiceId = $(this).val();
+    saveSettings();
+    updateEmotionSelect(s.testVoiceId, 'gsvi_test_emotion', 'testEmotion');
+  });
 
-    // Fetch voices
-    $("#gsvi_fetch_voices").on("click", async function () {
-        const btn = $(this);
-        btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 获取中...');
-        try {
-            const voices = await fetchVoiceList();
-            console.log(`${LOG} Fetched ${voices.length} voices.`);
-            
-            // Cache voices in settings so they persist across reloads
-            const s = getSettings();
-            s.cachedVoices = voices;
-            saveSettingsDebounced();
+  // Fetch voices
+  $('#gsvi_fetch_voices').on('click', async function () {
+    const btn = $(this);
+    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> 获取中...');
+    try {
+      const voices = await fetchVoiceList();
+      console.log(`${LOG} Fetched ${voices.length} voices.`);
 
-            toastr.success(`成功获取 ${voices.length} 个模型`, "GSVI TTS");
+      // Cache voices in settings so they persist across reloads
+      const s = getSettings();
+      s.cachedVoices = voices;
+      saveSettingsDebounced();
 
-            // Rebuild setting UI for voices
-            buildVoiceSelects();
-        } catch (err) {
-            console.error(`${LOG} fetchVoices error:`, err);
-            toastr.error(err.message, "GSVI TTS");
-        } finally {
-            btn.prop("disabled", false).html('<i class="fa-solid fa-rotate"></i> 获取');
-        }
-    });
+      toastr.success(`成功获取 ${voices.length} 个模型`, 'GSVI TTS');
 
-    // Speed slider
-    $("#gsvi_speed").on("input", function () {
-        const val = parseFloat($(this).val());
-        s.speed = val;
-        $("#gsvi_speed_val").text(`${val.toFixed(1)}x`);
-        saveSettings();
-    });
+      // Rebuild setting UI for voices
+      buildVoiceSelects();
+    } catch (err) {
+      console.error(`${LOG} fetchVoices error:`, err);
+      toastr.error(err.message, 'GSVI TTS');
+    } finally {
+      btn.prop('disabled', false).html('<i class="fa-solid fa-rotate"></i> 获取');
+    }
+  });
 
-    // Text lang
-    $("#gsvi_text_lang").on("change", function () {
-        s.textLang = $(this).val();
-        saveSettings();
-    });
+  // Speed slider
+  $('#gsvi_speed').on('input', function () {
+    const val = parseFloat($(this).val());
+    s.speed = val;
+    $('#gsvi_speed_val').text(`${val.toFixed(1)}x`);
+    saveSettings();
+  });
 
-    // Prompt lang
-    $("#gsvi_prompt_lang").on("change", function () {
-        s.promptLang = $(this).val();
-        updateEmotionSelect(s.voiceId, "gsvi_emotion", "emotion");
-        saveSettings();
-    });
+  // Text lang
+  $('#gsvi_text_lang').on('change', function () {
+    s.textLang = $(this).val();
+    saveSettings();
+  });
 
-    // Emotion
-    $("#gsvi_emotion").on("change", function () {
-        s.emotion = $(this).val();
-        saveSettings();
-    });
+  // Prompt lang
+  $('#gsvi_prompt_lang').on('change', function () {
+    s.promptLang = $(this).val();
+    updateEmotionSelect(s.voiceId, 'gsvi_emotion', 'emotion');
+    saveSettings();
+  });
 
-    // Test Emotion
-    $("#gsvi_test_emotion").on("change", function () {
-        s.testEmotion = $(this).val();
-        saveSettings();
-    });
+  // Emotion
+  $('#gsvi_emotion').on('change', function () {
+    s.emotion = $(this).val();
+    saveSettings();
+  });
 
-    // Split method
-    $("#gsvi_split_method").on("change", function () {
-        s.textSplitMethod = $(this).val();
-        saveSettings();
-    });
+  // Test Emotion
+  $('#gsvi_test_emotion').on('change', function () {
+    s.testEmotion = $(this).val();
+    saveSettings();
+  });
 
-    // Batch size slider
-    $("#gsvi_batch_size").on("input", function () {
-        const val = parseInt($(this).val(), 10);
-        s.batchSize = val;
-        $("#gsvi_batch_size_val").text(val);
-        saveSettings();
-    });
+  // Split method
+  $('#gsvi_split_method').on('change', function () {
+    s.textSplitMethod = $(this).val();
+    saveSettings();
+  });
 
-    // Save locally toggle
-    $("#gsvi_save_to_server").on("change", function () {
-        s.saveToServer = $(this).prop("checked");
-        saveSettings();
-    });
+  // Batch size slider
+  $('#gsvi_batch_size').on('input', function () {
+    const val = parseInt($(this).val(), 10);
+    s.batchSize = val;
+    $('#gsvi_batch_size_val').text(val);
+    saveSettings();
+  });
 
-    // Test button
-    $("#gsvi_test_btn").on("click", async function () {
-        const btn = $(this);
-        if (!s.voiceId) {
-            toastr.warning("请先选择一个角色", "GSVI TTS");
-            return;
-        }
-        btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> 生成中...');
-        try {
-            const result = await generateAudio(DEFAULT_PREVIEW_TEXT, s.voiceId, s.emotion || "默认");
-            playAudioBlob(result.url, "gsvi_test_btn");
-            toastr.success("试听播放中", "GSVI TTS");
-        } catch (err) {
-            console.error(`${LOG} Test playback error:`, err);
-            toastr.error(err.message, "GSVI TTS");
-        } finally {
-            btn.prop("disabled", false).html('<i class="fa-solid fa-play"></i> 试听');
-        }
-    });
+  // Save locally toggle
+  $('#gsvi_save_to_server').on('change', function () {
+    s.saveToServer = $(this).prop('checked');
+    saveSettings();
+  });
 
-    // Inject position — toggle depth row visibility
-    $("#gsvi_inject_position").on("change", function () {
-        const pos = parseInt($(this).val(), 10);
-        $("#gsvi_depth_row").toggle(pos === 2);
-    });
+  // Test button
+  $('#gsvi_test_btn').on('click', async function () {
+    const btn = $(this);
+    if (!s.voiceId) {
+      toastr.warning('请先选择一个角色', 'GSVI TTS');
+      return;
+    }
+    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> 生成中...');
+    try {
+      const result = await generateAudio(DEFAULT_PREVIEW_TEXT, s.voiceId, s.emotion || '默认');
+      playAudioBlob(result.url, 'gsvi_test_btn');
+      toastr.success('试听播放中', 'GSVI TTS');
+    } catch (err) {
+      console.error(`${LOG} Test playback error:`, err);
+      toastr.error(err.message, 'GSVI TTS');
+    } finally {
+      btn.prop('disabled', false).html('<i class="fa-solid fa-play"></i> 试听');
+    }
+  });
 
-    // Save button — read all current UI values
-    $("#gsvi_save_settings").on("click", function () {
-        readSettingsFromUI();
-        toastr.success("设置已保存", "GSVI TTS");
-    });
+  // Inject position — toggle depth row visibility
+  $('#gsvi_inject_position').on('change', function () {
+    const pos = parseInt($(this).val(), 10);
+    $('#gsvi_depth_row').toggle(pos === 2);
+  });
 
-    // Color picker realtime update
-    $("#gsvi_theme_color").on("input", function () {
-        document.documentElement.style.setProperty('--gsvi-theme-color', $(this).val());
-    });
+  // Save button — read all current UI values
+  $('#gsvi_save_settings').on('click', function () {
+    readSettingsFromUI();
+    toastr.success('设置已保存', 'GSVI TTS');
+  });
 
-    // Prompt Manager Modal
-    $("#gsvi_open_prompt_modal").on("click", function () {
-        openPromptManagerModal();
-    });
+  // Color picker realtime update
+  $('#gsvi_theme_color').on('input', function () {
+    document.documentElement.style.setProperty('--gsvi-theme-color', $(this).val());
+  });
 
-    // Character Mapping Modal
-    $("#gsvi_open_char_mapping_modal").on("click", function () {
-        openCharacterMappingModal();
-    });
+  // Prompt Manager Modal
+  $('#gsvi_open_prompt_modal').on('click', function () {
+    openPromptManagerModal();
+  });
 
-    $("#gsvi_clear_cache").on("click", function () {
-        // Revoke all blob URLs
-        for (const [, data] of audioCache) {
-            if (data.url && data.url.startsWith("blob:")) URL.revokeObjectURL(data.url);
-        }
-        audioCache.clear();
-        pendingGenerations.clear();
-        stopCurrentPlayback();
-        toastr.success(`缓存已清理`, "GSVI TTS");
-    });
+  // Character Mapping Modal
+  $('#gsvi_open_char_mapping_modal').on('click', function () {
+    openCharacterMappingModal();
+  });
+
+  $('#gsvi_clear_cache').on('click', function () {
+    // Revoke all blob URLs
+    for (const [, data] of audioCache) {
+      if (data.url && data.url.startsWith('blob:')) URL.revokeObjectURL(data.url);
+    }
+    audioCache.clear();
+    pendingGenerations.clear();
+    stopCurrentPlayback();
+    toastr.success(`缓存已清理`, 'GSVI TTS');
+  });
 }
 
 export function readSettingsFromUI() {
-    const s = getSettings();
-    s.endpoint = ($("#gsvi_endpoint").val() || "").trim();
-    s.apiFormat = $("#gsvi_api_format").val() || "auto";
-    s.voiceId = $("#gsvi_voice").val() || "";
-    s.speed = parseFloat($("#gsvi_speed").val()) || 1.0;
-    s.textLang = $("#gsvi_text_lang").val() || "多语种混合";
-    s.promptLang = $("#gsvi_prompt_lang").val() || "";
-    s.emotion = $("#gsvi_emotion").val() || "";
-    s.textSplitMethod = $("#gsvi_split_method").val() || "按标点符号切";
-    s.batchSize = parseInt($("#gsvi_batch_size").val(), 10) || 1;
-    s.saveToServer = $("#gsvi_save_to_server").prop("checked");
-    s.themeColor = $("#gsvi_theme_color").val() || "#52a9af";
-    s.injectEnabled = $("#gsvi_inject_enabled").prop("checked");
-    s.injectPosition = parseInt($("#gsvi_inject_position").val(), 10) || 0;
-    s.injectDepth = parseInt($("#gsvi_inject_depth").val(), 10) || 3;
+  const s = getSettings();
+  s.endpoint = ($('#gsvi_endpoint').val() || '').trim();
+  s.apiFormat = $('#gsvi_api_format').val() || 'auto';
+  s.voiceId = $('#gsvi_voice').val() || '';
+  s.speed = parseFloat($('#gsvi_speed').val()) || 1.0;
+  s.textLang = $('#gsvi_text_lang').val() || '多语种混合';
+  s.promptLang = $('#gsvi_prompt_lang').val() || '';
+  s.emotion = $('#gsvi_emotion').val() || '';
+  s.textSplitMethod = $('#gsvi_split_method').val() || '按标点符号切';
+  s.batchSize = parseInt($('#gsvi_batch_size').val(), 10) || 1;
+  s.saveToServer = $('#gsvi_save_to_server').prop('checked');
+  s.themeColor = $('#gsvi_theme_color').val() || '#52a9af';
+  s.injectEnabled = $('#gsvi_inject_enabled').prop('checked');
+  s.injectPosition = parseInt($('#gsvi_inject_position').val(), 10) || 0;
+  s.injectDepth = parseInt($('#gsvi_inject_depth').val(), 10) || 3;
 
-    // Apply theme
-    applyThemeColor();
+  // Apply theme
+  applyThemeColor();
 
-    // Update voice version from fetched data
-    const voice = fetchedVoices.find(v => v.id === s.voiceId);
-    if (voice && voice.version) {
-        s.voiceVersion = voice.version;
-    }
+  // Update voice version from fetched data
+  const voice = fetchedVoices.find(v => v.id === s.voiceId);
+  if (voice && voice.version) {
+    s.voiceVersion = voice.version;
+  }
 
-    saveSettings();
-    return s;
+  saveSettings();
+  return s;
 }
 
 export function applyThemeColor() {
-    const s = getSettings();
-    if (s.themeColor) {
-        document.documentElement.style.setProperty('--gsvi-theme-color', s.themeColor);
-    }
+  const s = getSettings();
+  if (s.themeColor) {
+    document.documentElement.style.setProperty('--gsvi-theme-color', s.themeColor);
+  }
 }
 
 function updatePromptLangDropdown(voiceId) {
-    const s = getSettings();
-    const sourceVoices = fetchedVoices.length > 0 ? fetchedVoices : (s.cachedVoices || []);
-    const voice = sourceVoices.find(v => v.id === voiceId);
-    if (!voice) return;
+  const s = getSettings();
+  const sourceVoices = fetchedVoices.length > 0 ? fetchedVoices : s.cachedVoices || [];
+  const voice = sourceVoices.find(v => v.id === voiceId);
+  if (!voice) return;
 
-    // Update prompt lang dropdown
-    const promptLangSelect = $("#gsvi_prompt_lang");
-    promptLangSelect.empty();
-    if (voice.promptLangs && voice.promptLangs.length > 0) {
-        for (const lang of voice.promptLangs) {
-            promptLangSelect.append(`<option value="${lang}" ${s.promptLang === lang ? "selected" : ""}>${lang}</option>`);
-        }
-        // Set first if not already set
-        if (!s.promptLang || !voice.promptLangs.includes(s.promptLang)) {
-            s.promptLang = voice.promptLangs[0];
-            promptLangSelect.val(s.promptLang);
-            saveSettings();
-        }
-    } else {
-        promptLangSelect.append('<option value="">(无)</option>');
+  // Update prompt lang dropdown
+  const promptLangSelect = $('#gsvi_prompt_lang');
+  promptLangSelect.empty();
+  if (voice.promptLangs && voice.promptLangs.length > 0) {
+    for (const lang of voice.promptLangs) {
+      promptLangSelect.append(`<option value="${lang}" ${s.promptLang === lang ? 'selected' : ''}>${lang}</option>`);
     }
+    // Set first if not already set
+    if (!s.promptLang || !voice.promptLangs.includes(s.promptLang)) {
+      s.promptLang = voice.promptLangs[0];
+      promptLangSelect.val(s.promptLang);
+      saveSettings();
+    }
+  } else {
+    promptLangSelect.append('<option value="">(无)</option>');
+  }
 }
 
 function updateEmotionSelect(voiceId, selectId, settingKey) {
-    const s = getSettings();
-    const allVoices = fetchedVoices.length > 0 ? fetchedVoices : (s.cachedVoices || []);
-    const voice = allVoices.find(v => v.id === voiceId);
+  const s = getSettings();
+  const allVoices = fetchedVoices.length > 0 ? fetchedVoices : s.cachedVoices || [];
+  const voice = allVoices.find(v => v.id === voiceId);
 
-    const emotionSelect = $(`#${selectId}`);
-    emotionSelect.empty();
+  const emotionSelect = $(`#${selectId}`);
+  emotionSelect.empty();
 
-    let emotions = [];
-    if (voice) {
-        if (voice.emotionsMap && s.promptLang && voice.emotionsMap[s.promptLang]) {
-            emotions = voice.emotionsMap[s.promptLang];
-        } else if (voice.emotions) {
-            emotions = voice.emotions;
-        }
+  let emotions = [];
+  if (voice) {
+    if (voice.emotionsMap && s.promptLang && voice.emotionsMap[s.promptLang]) {
+      emotions = voice.emotionsMap[s.promptLang];
+    } else if (voice.emotions) {
+      emotions = voice.emotions;
     }
+  }
 
-    if (emotions.length > 0) {
-        for (const em of emotions) {
-            emotionSelect.append(`<option value="${em}" ${s[settingKey] === em ? "selected" : ""}>${em}</option>`);
-        }
-    } else {
-        emotionSelect.append('<option value="">(无可用情绪)</option>');
+  if (emotions.length > 0) {
+    for (const em of emotions) {
+      emotionSelect.append(`<option value="${em}" ${s[settingKey] === em ? 'selected' : ''}>${em}</option>`);
     }
+  } else {
+    emotionSelect.append('<option value="">(无可用情绪)</option>');
+  }
 }
 
 export function buildVoiceSelects() {
-    const s = getSettings();
-    const voices = fetchedVoices.length > 0 ? fetchedVoices : (s.cachedVoices || []);
+  const s = getSettings();
+  const voices = fetchedVoices.length > 0 ? fetchedVoices : s.cachedVoices || [];
 
-    const defaultVoiceSelect = $("#gsvi_default_voice");
-    const testVoiceSelect = $("#gsvi_test_voice");
+  const defaultVoiceSelect = $('#gsvi_default_voice');
+  const testVoiceSelect = $('#gsvi_test_voice');
 
-    if (!defaultVoiceSelect.length) return; // Not on settings page
+  if (!defaultVoiceSelect.length) return; // Not on settings page
 
-    defaultVoiceSelect.empty();
-    testVoiceSelect.empty();
+  defaultVoiceSelect.empty();
+  testVoiceSelect.empty();
 
-    if (voices.length === 0) {
-        defaultVoiceSelect.append('<option value="">(请先获取模型)</option>');
-        testVoiceSelect.append('<option value="">(请先获取模型)</option>');
-        return;
-    }
+  if (voices.length === 0) {
+    defaultVoiceSelect.append('<option value="">(请先获取模型)</option>');
+    testVoiceSelect.append('<option value="">(请先获取模型)</option>');
+    return;
+  }
 
-    // Sort voices by name
-    voices.sort((a, b) => a.name.localeCompare(b.name));
+  // Sort voices by name
+  voices.sort((a, b) => a.name.localeCompare(b.name));
 
-    for (const v of voices) {
-        const displayName = v.name; 
+  for (const v of voices) {
+    const displayName = v.name;
 
-        defaultVoiceSelect.append(`<option value="${v.id}" ${s.voiceId === v.id ? "selected" : ""}>${displayName}</option>`);
-        testVoiceSelect.append(`<option value="${v.id}" ${s.testVoiceId === v.id ? "selected" : ""}>${displayName}</option>`);
-    }
+    defaultVoiceSelect.append(
+      `<option value="${v.id}" ${s.voiceId === v.id ? 'selected' : ''}>${displayName}</option>`,
+    );
+    testVoiceSelect.append(
+      `<option value="${v.id}" ${s.testVoiceId === v.id ? 'selected' : ''}>${displayName}</option>`,
+    );
+  }
 
-    if (!s.voiceId || !voices.find(v => v.id === s.voiceId)) {
-        s.voiceId = voices[0].id;
-        s.voiceVersion = voices[0].version;
-        defaultVoiceSelect.val(s.voiceId);
-        saveSettings();
-    }
+  if (!s.voiceId || !voices.find(v => v.id === s.voiceId)) {
+    s.voiceId = voices[0].id;
+    s.voiceVersion = voices[0].version;
+    defaultVoiceSelect.val(s.voiceId);
+    saveSettings();
+  }
 
-    updatePromptLangDropdown(s.voiceId);
-    updateEmotionSelect(s.voiceId, "gsvi_emotion", "emotion");
-    updateEmotionSelect(s.testVoiceId, "gsvi_test_emotion", "testEmotion");
+  updatePromptLangDropdown(s.voiceId);
+  updateEmotionSelect(s.voiceId, 'gsvi_emotion', 'emotion');
+  updateEmotionSelect(s.testVoiceId, 'gsvi_test_emotion', 'testEmotion');
 }
 
 function openPromptManagerModal() {
-    const s = getSettings();
+  const s = getSettings();
 
-    // Remove old if exists
-    $("#gsvi-custom-modal").remove();
+  // Remove old if exists
+  $('#gsvi-custom-modal').remove();
 
-    let listHtml = "";
-    s.promptList.forEach((p) => {
-        listHtml += createPromptItemHtml(p.id, p.name, p.content, p.enabled);
-    });
+  let listHtml = '';
+  s.promptList.forEach(p => {
+    listHtml += createPromptItemHtml(p.id, p.name, p.content, p.enabled);
+  });
 
-    // Build Reference Panel Data
-    const voices = fetchedVoices.length > 0 ? fetchedVoices : (s.cachedVoices || []);
+  // Build Reference Panel Data
+  const voices = fetchedVoices.length > 0 ? fetchedVoices : s.cachedVoices || [];
 
-    // Build per-character + per-emotion grouped HTML for the generator panel
-    let genPanelHtml = "";
+  // Build per-character + per-emotion grouped HTML for the generator panel
+  let genPanelHtml = '';
 
-    if (voices.length === 0) {
-        genPanelHtml = "<div style='opacity:0.5; font-size:11px;'>尚未获取模型，请先点击「获取」按钮</div>";
-    } else {
-        for (const v of voices) {
-            // Use mapped character name if available, otherwise strip bracketed strings like "[v4]" from the character name for display and selection
-            let charName = (s.characterVoices && s.characterVoices[v.id]) || (v.name || v.id).replace(/\s*\[.*?\]/g, "").trim();
+  if (voices.length === 0) {
+    genPanelHtml = "<div style='opacity:0.5; font-size:11px;'>尚未获取模型，请先点击「获取」按钮</div>";
+  } else {
+    for (const v of voices) {
+      // Use mapped character name if available, otherwise strip bracketed strings like "[v4]" from the character name for display and selection
+      let charName =
+        (s.characterVoices && s.characterVoices[v.id]) || (v.name || v.id).replace(/\s*\[.*?\]/g, '').trim();
 
-            // Collect this voice's emotions
-            let emoList = [];
-            if (v.emotionsMap) {
-                for (const list of Object.values(v.emotionsMap)) {
-                    for (const e of list) {
-                        if (e && !emoList.includes(e)) emoList.push(e);
-                    }
-                }
-            } else if (v.emotions) {
-                emoList = [...v.emotions];
-            }
+      // Collect this voice's emotions
+      let emoList = [];
+      if (v.emotionsMap) {
+        for (const list of Object.values(v.emotionsMap)) {
+          for (const e of list) {
+            if (e && !emoList.includes(e)) emoList.push(e);
+          }
+        }
+      } else if (v.emotions) {
+        emoList = [...v.emotions];
+      }
 
-            const emoChips = emoList.length > 0
-                ? emoList.map(e => `<div class="gsvi-chip emo-chip" data-char="${charName}" data-val="${e}">${e}</div>`).join("")
-                : `<span style="font-size:11px;opacity:0.5;">（无情感数据）</span>`;
+      const emoChips =
+        emoList.length > 0
+          ? emoList
+              .map(e => `<div class="gsvi-chip emo-chip" data-char="${charName}" data-val="${e}">${e}</div>`)
+              .join('')
+          : `<span style="font-size:11px;opacity:0.5;">（无情感数据）</span>`;
 
-            genPanelHtml += `
+      genPanelHtml += `
                 <div class="gsvi-char-group" style="margin-bottom:12px;">
                     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
                         <div class="gsvi-chip char-chip" data-val="${charName}" style="margin:0;">${charName}</div>
@@ -519,10 +541,10 @@ function openPromptManagerModal() {
                     <div class="gsvi-char-emo-list" style="padding-left:8px; border-left: 2px solid rgba(255,255,255,0.1);">${emoChips}</div>
                 </div>
             `;
-        }
     }
+  }
 
-    const modalHtml = `
+  const modalHtml = `
         <div id="gsvi-custom-modal" class="gsvi-modal-backdrop">
             <div class="gsvi-modal-container gsvi-prompt-manager-modal">
                 <div class="gsvi-modal-header">
@@ -572,164 +594,173 @@ function openPromptManagerModal() {
         </div>
     `;
 
-    $("body").append(modalHtml);
+  $('body').append(modalHtml);
 
-    // Chip selection 
-    $("#gsvi-custom-modal .char-chip").on("click", function () {
-        $(this).toggleClass("selected");
-        $(this).css({
-            "background": $(this).hasClass("selected") ? "var(--gsvi-theme-color)" : "rgba(255,255,255,0.05)",
-            "color": $(this).hasClass("selected") ? "#fff" : ""
-        });
+  // Chip selection
+  $('#gsvi-custom-modal .char-chip').on('click', function () {
+    $(this).toggleClass('selected');
+    $(this).css({
+      background: $(this).hasClass('selected') ? 'var(--gsvi-theme-color)' : 'rgba(255,255,255,0.05)',
+      color: $(this).hasClass('selected') ? '#fff' : '',
+    });
+  });
+
+  $('#gsvi-custom-modal .emo-chip').on('click', function () {
+    $(this).toggleClass('selected');
+    $(this).css({
+      background: $(this).hasClass('selected') ? 'rgba(245,158,11,0.8)' : 'rgba(255,255,255,0.05)',
+      color: $(this).hasClass('selected') ? '#000' : '',
+    });
+  });
+
+  // Auto-Generate logic
+  $('#gsvi-prompt-generate').on('click', function () {
+    const selectedChars = [];
+    $('#gsvi-generator-panel .char-chip.selected').each((_, el) => selectedChars.push($(el).data('val')));
+
+    if (selectedChars.length === 0) {
+      toastr.warning('请至少选择一个角色（点击角色名标签）', 'GSVI TTS');
+      return;
+    }
+
+    const charEmoMap = {};
+    selectedChars.forEach(c => {
+      charEmoMap[c] = [];
     });
 
-    $("#gsvi-custom-modal .emo-chip").on("click", function () {
-        $(this).toggleClass("selected");
-        $(this).css({
-            "background": $(this).hasClass("selected") ? "rgba(245,158,11,0.8)" : "rgba(255,255,255,0.05)",
-            "color": $(this).hasClass("selected") ? "#000" : ""
-        });
+    $('#gsvi-generator-panel .emo-chip.selected').each((_, el) => {
+      const charAttr = $(el).data('char');
+      const emoVal = $(el).data('val');
+      if (charAttr && charEmoMap[charAttr] !== undefined) {
+        charEmoMap[charAttr].push(emoVal);
+      }
     });
 
-    // Auto-Generate logic
-    $("#gsvi-prompt-generate").on("click", function () {
-        const selectedChars = [];
-        $("#gsvi-generator-panel .char-chip.selected").each((_, el) => selectedChars.push($(el).data("val")));
+    let genContent = 'Voice character availability:\n';
+    for (const [char, emos] of Object.entries(charEmoMap)) {
+      if (emos.length > 0) {
+        genContent += `- ${char}: ${emos.join(', ')}\n`;
+      } else {
+        genContent += `- ${char}\n`;
+      }
+    }
+    genContent += 'Only use characters and emotions listed above.';
 
-        if (selectedChars.length === 0) {
-            toastr.warning("请至少选择一个角色（点击角色名标签）", "GSVI TTS");
-            return;
-        }
-
-        const charEmoMap = {};
-        selectedChars.forEach(c => { charEmoMap[c] = []; });
-
-        $("#gsvi-generator-panel .emo-chip.selected").each((_, el) => {
-            const charAttr = $(el).data("char");
-            const emoVal = $(el).data("val");
-            if (charAttr && charEmoMap[charAttr] !== undefined) {
-                charEmoMap[charAttr].push(emoVal);
-            }
-        });
-
-        let genContent = "Voice character availability:\n";
-        for (const [char, emos] of Object.entries(charEmoMap)) {
-            if (emos.length > 0) {
-                genContent += `- ${char}: ${emos.join(", ")}\n`;
-            } else {
-                genContent += `- ${char}\n`;
-            }
-        }
-        genContent += "Only use characters and emotions listed above.";
-
-        const newId = Date.now().toString();
-        $("#gsvi-prompt-list").append(createPromptItemHtml(newId, "可用角色情感映射", genContent));
-        initDragAndDrop();
-
-        const listDiv = document.getElementById("gsvi-prompt-list");
-        listDiv.scrollTop = listDiv.scrollHeight;
-    });
-
-    const closeModal = () => {
-        const modal = $("#gsvi-custom-modal");
-        modal.find(".gsvi-modal-container").css("animation", "gsvi-slide-up 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) reverse");
-        modal.css("animation", "gsvi-fade-in 0.2s ease-out reverse");
-        setTimeout(() => modal.remove(), 180);
-    };
-
-    $("#gsvi-modal-close-btn, #gsvi-modal-cancel").on("click", closeModal);
-    $("#gsvi-custom-modal").on("click", function (e) {
-        if (e.target === this) closeModal();
-    });
-
-    $("#gsvi-modal-save").on("click", function () {
-        const newList = [];
-        $("#gsvi-prompt-list .gsvi-prompt-item").each((_, el) => {
-            const id = $(el).data("id") || Date.now().toString();
-            const name = $(el).find(".gsvi-prompt-name").val() || "Untitled";
-            const content = $(el).find(".gsvi-prompt-content").val() || "";
-            const enabled = $(el).find(".gsvi-prompt-enabled").prop("checked");
-            if (content.trim()) {
-                newList.push({ id, name, content, enabled });
-            }
-        });
-        s.promptList = newList;
-        saveSettingsDebounced();
-        toastr.success("提示词已保存生效", "GSVI TTS");
-    });
-
-    $("#gsvi-prompt-add").on("click", function () {
-        const newId = Date.now().toString();
-        $("#gsvi-prompt-list").append(createPromptItemHtml(newId, "New Prompt", ""));
-        initDragAndDrop();
-    });
-
-    $("#gsvi-prompt-insert-default").on("click", async function () {
-        try {
-            const scriptUrl = import.meta.url;
-            const extDir = scriptUrl.substring(0, scriptUrl.lastIndexOf('/'));
-            const url = `${extDir.replace('/modules', '')}/default_prompt.txt`;
-            const resp = await fetch(url, { cache: "no-store" });
-            if (!resp.ok) { toastr.error("读取默认提示词文件失败", "GSVI"); return; }
-            const content = await resp.text();
-            const newId = Date.now().toString();
-            $("#gsvi-prompt-list").append(createPromptItemHtml(newId, "Default Formatting", content.trim()));
-            initDragAndDrop();
-        } catch (err) {
-            console.error(`${LOG} Failed to load default_prompt.txt:`, err);
-        }
-    });
-
-    $("#gsvi-prompt-list").on("click", ".gsvi-prompt-del", function () {
-        $(this).closest(".gsvi-prompt-item").remove();
-    });
-
+    const newId = Date.now().toString();
+    $('#gsvi-prompt-list').append(createPromptItemHtml(newId, '可用角色情感映射', genContent));
     initDragAndDrop();
+
+    const listDiv = document.getElementById('gsvi-prompt-list');
+    listDiv.scrollTop = listDiv.scrollHeight;
+  });
+
+  const closeModal = () => {
+    const modal = $('#gsvi-custom-modal');
+    modal
+      .find('.gsvi-modal-container')
+      .css('animation', 'gsvi-slide-up 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) reverse');
+    modal.css('animation', 'gsvi-fade-in 0.2s ease-out reverse');
+    setTimeout(() => modal.remove(), 180);
+  };
+
+  $('#gsvi-modal-close-btn, #gsvi-modal-cancel').on('click', closeModal);
+  $('#gsvi-custom-modal').on('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+
+  $('#gsvi-modal-save').on('click', function () {
+    const newList = [];
+    $('#gsvi-prompt-list .gsvi-prompt-item').each((_, el) => {
+      const id = $(el).data('id') || Date.now().toString();
+      const name = $(el).find('.gsvi-prompt-name').val() || 'Untitled';
+      const content = $(el).find('.gsvi-prompt-content').val() || '';
+      const enabled = $(el).find('.gsvi-prompt-enabled').prop('checked');
+      if (content.trim()) {
+        newList.push({ id, name, content, enabled });
+      }
+    });
+    s.promptList = newList;
+    saveSettingsDebounced();
+    toastr.success('提示词已保存生效', 'GSVI TTS');
+  });
+
+  $('#gsvi-prompt-add').on('click', function () {
+    const newId = Date.now().toString();
+    $('#gsvi-prompt-list').append(createPromptItemHtml(newId, 'New Prompt', ''));
+    initDragAndDrop();
+  });
+
+  $('#gsvi-prompt-insert-default').on('click', async function () {
+    try {
+      const scriptUrl = import.meta.url;
+      const extDir = scriptUrl.substring(0, scriptUrl.lastIndexOf('/'));
+      const url = `${extDir.replace('/modules', '')}/default_prompt.txt`;
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) {
+        toastr.error('读取默认提示词文件失败', 'GSVI');
+        return;
+      }
+      const content = await resp.text();
+      const newId = Date.now().toString();
+      $('#gsvi-prompt-list').append(createPromptItemHtml(newId, 'Default Formatting', content.trim()));
+      initDragAndDrop();
+    } catch (err) {
+      console.error(`${LOG} Failed to load default_prompt.txt:`, err);
+    }
+  });
+
+  $('#gsvi-prompt-list').on('click', '.gsvi-prompt-del', function () {
+    $(this).closest('.gsvi-prompt-item').remove();
+  });
+
+  initDragAndDrop();
 }
 
 function createPromptItemHtml(id, name, content, enabled = true) {
-    return `
+  return `
         <div class="gsvi-glass-item gsvi-prompt-item" data-id="${id}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <i class="fa-solid fa-grip-vertical gsvi-drag-handle" style="cursor: grab; color: rgba(255,255,255,0.4); font-size: 16px;"></i>
-                    <input type="checkbox" class="gsvi-prompt-enabled" ${enabled ? "checked" : ""} title="启用/禁用此条目" />
+                    <input type="checkbox" class="gsvi-prompt-enabled" ${enabled ? 'checked' : ''} title="启用/禁用此条目" />
                     <input type="text" class="gsvi-glass-input gsvi-prompt-name" value="${name.replace(/"/g, '&quot;')}" placeholder="Name" style="font-weight: bold; width: 160px;" />
                 </div>
                 <button class="menu_button gsvi-prompt-del" title="删除" style="padding: 6px 10px; min-width: auto; background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220,38,38,0.4); border-radius: 6px; color: #fca5a5;"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <textarea class="gsvi-glass-input gsvi-prompt-content" placeholder="输入提示词内容..." style="width: 100%; height: 85px; resize: vertical;">${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+            <textarea class="gsvi-glass-input gsvi-prompt-content" placeholder="输入提示词内容..." style="width: 100%; height: 85px; resize: vertical;">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
         </div>
     `;
 }
 
 function initDragAndDrop() {
-    const list = document.getElementById('gsvi-prompt-list');
-    if (!list) return;
+  const list = document.getElementById('gsvi-prompt-list');
+  if (!list) return;
 
-    if (typeof Sortable !== 'undefined') {
-        Sortable.create(list, {
-            handle: '.gsvi-drag-handle',
-            animation: 150
-        });
-    }
+  if (typeof Sortable !== 'undefined') {
+    Sortable.create(list, {
+      handle: '.gsvi-drag-handle',
+      animation: 150,
+    });
+  }
 }
 
 function openCharacterMappingModal() {
-    const s = getSettings();
-    const voices = fetchedVoices.length > 0 ? fetchedVoices : (s.cachedVoices || []);
+  const s = getSettings();
+  const voices = fetchedVoices.length > 0 ? fetchedVoices : s.cachedVoices || [];
 
-    if (voices.length === 0) {
-        toastr.warning("尚未获取模型，请先点击「获取」按钮", "GSVI TTS");
-        return;
-    }
+  if (voices.length === 0) {
+    toastr.warning('尚未获取模型，请先点击「获取」按钮', 'GSVI TTS');
+    return;
+  }
 
-    $("#gsvi-mapping-modal").remove();
+  $('#gsvi-mapping-modal').remove();
 
-    let listHtml = "";
-    voices.sort((a, b) => a.name.localeCompare(b.name)).forEach((v) => {
-        const mappedName = (s.characterVoices && s.characterVoices[v.id]) || "";
-        listHtml += `
+  let listHtml = '';
+  voices
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach(v => {
+      const mappedName = (s.characterVoices && s.characterVoices[v.id]) || '';
+      listHtml += `
             <div class="gsvi-glass-item" style="padding: 8px 12px; display: flex; align-items: center; gap: 12px;">
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 13px; font-weight: bold; opacity: 0.9;">${v.name}</div>
@@ -746,7 +777,7 @@ function openCharacterMappingModal() {
         `;
     });
 
-    const modalHtml = `
+  const modalHtml = `
         <div id="gsvi-mapping-modal" class="gsvi-modal-backdrop">
             <div class="gsvi-modal-container" style="max-width: 600px; width: 90%;">
                 <div class="gsvi-modal-header">
@@ -769,24 +800,26 @@ function openCharacterMappingModal() {
         </div>
     `;
 
-    $("body").append(modalHtml);
+  $('body').append(modalHtml);
 
-    const closeModal = () => $("#gsvi-mapping-modal").remove();
-    $("#gsvi-mapping-close-btn, #gsvi-mapping-cancel").on("click", closeModal);
-    $("#gsvi-mapping-modal").on("click", function (e) { if (e.target === this) closeModal(); });
+  const closeModal = () => $('#gsvi-mapping-modal').remove();
+  $('#gsvi-mapping-close-btn, #gsvi-mapping-cancel').on('click', closeModal);
+  $('#gsvi-mapping-modal').on('click', function (e) {
+    if (e.target === this) closeModal();
+  });
 
-    $("#gsvi-mapping-save").on("click", function () {
-        const mappings = {};
-        $("#gsvi-mapping-list .gsvi-mapping-name").each((_, el) => {
-            const voiceId = $(el).data("voice-id");
-            const mappedName = $(el).val().trim();
-            if (mappedName) {
-                mappings[voiceId] = mappedName;
-            }
-        });
-        s.characterVoices = mappings;
-        saveSettingsDebounced();
-        toastr.success("角色映射已保存", "GSVI TTS");
-        closeModal();
+  $('#gsvi-mapping-save').on('click', function () {
+    const mappings = {};
+    $('#gsvi-mapping-list .gsvi-mapping-name').each((_, el) => {
+      const voiceId = $(el).data('voice-id');
+      const mappedName = $(el).val().trim();
+      if (mappedName) {
+        mappings[voiceId] = mappedName;
+      }
     });
+    s.characterVoices = mappings;
+    saveSettingsDebounced();
+    toastr.success('角色映射已保存', 'GSVI TTS');
+    closeModal();
+  });
 }

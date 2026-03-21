@@ -170,6 +170,7 @@ export async function processMessageElement(mesElement, chatMsg) {
     TTS_TAG_REGEX.lastIndex = 0;
     let match;
 
+    //console.log(`${LOG} Processing message for TTS generation. Raw text:`, rawText);
     while ((match = TTS_TAG_REGEX.exec(rawText)) !== null) {
         const charName = match[1];
         const emotion = match[2];
@@ -178,6 +179,7 @@ export async function processMessageElement(mesElement, chatMsg) {
         const lineId = `gsvi-line-${++lineCounter}`;
         const playBtnId = `${lineId}-play`;
         const regenBtnId = `${lineId}-regen`;
+        console.log(`${LOG} found dialogue:`, dialogue, `char: ${charName}`, `emotion: ${emotion}`, `langOverride: ${langOverride}`, `lineId: ${lineId}`);
 
         const voiceId = resolveVoiceForChar(charName);
         const key = hashKey(dialogue, voiceId, emotion);
@@ -198,7 +200,7 @@ export async function processMessageElement(mesElement, chatMsg) {
         if (voiceId) {
             generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId, emotion, charName, noVoice: false, isCached, langOverride, key });
         } else {
-            generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId: "", emotion, charName, noVoice: true, isCached: false, langOverride, key });
+            generations.push({ lineId, playBtnId, regenBtnId, text: dialogue, voiceId: s.voiceId, emotion, charName, noVoice: true, isCached: false, langOverride, key });
         }
     }
 
@@ -221,7 +223,7 @@ export async function processMessageElement(mesElement, chatMsg) {
     mesTextEl.querySelectorAll(".gsvi-audio-inline").forEach(el => el.remove());
 
     // Append button items inline beneath the corresponding text paragraphs
-    const paragraphs = Array.from(mesTextEl.querySelectorAll('p, div, blockquote, span'));
+    const paragraphs = Array.from(mesTextEl.querySelectorAll('p, blockquote'));
 
     for (const gen of generations) {
         const lineDiv = document.createElement("div");
@@ -259,7 +261,7 @@ export async function processMessageElement(mesElement, chatMsg) {
 
         // Find the most appropriate paragraph to append to
         let targetP = null;
-        const searchSnippet = gen.text.substring(0, Math.min(20, gen.text.length));
+        const searchSnippet = gen.text.substring(0, gen.text.length);
 
         for (let i = paragraphs.length - 1; i >= 0; i--) {
             if (paragraphs[i].textContent.includes(searchSnippet) || paragraphs[i].textContent.includes(gen.text)) {
@@ -269,9 +271,11 @@ export async function processMessageElement(mesElement, chatMsg) {
         }
 
         if (targetP) {
-            targetP.insertAdjacentElement('afterend', lineDiv);
+            targetP.insertAdjacentElement('beforeend', lineDiv);
+            console.log(`${LOG} Inserted audio controls for line "${gen.text.substring(0, 30)}..." inside paragraph:`, targetP);
         } else {
             mesTextEl.appendChild(lineDiv);
+            console.warn(`${LOG} Could not find matching paragraph for line "${gen.text.substring(0, 30)}...", appended at the end.`);
         }
 
         bindLineEvents(gen, chatMsg);
