@@ -14,6 +14,7 @@ import { setFetchedVoices } from "./modules/api.js";
 import { audioCache } from "./modules/cache.js";
 import { stopCurrentPlayback, processMessageElement } from "./modules/renderer.js";
 import { buildSettingsHtml, bindSettingsEvents, applyThemeColor } from "./modules/ui.js";
+import { extractQuotes, openQuoteSelectModal, restoreQuoteTTSFromMetadata } from "./modules/quote-extractor.js";
 
 // ═══════════════════════════════════════════════════════════════
 // Runtime State (Moved to modules/cache.js, api.js, renderer.js)
@@ -151,6 +152,7 @@ function onMessageRendered(messageId) {
     if (!mesElement) return;
 
     processMessageElement(mesElement, chatMsg);
+    restoreQuoteTTSFromMetadata(mesElement, chatMsg);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -163,7 +165,7 @@ jQuery(async () => {
     // Init settings
     const s = getSettings();
     applyThemeColor();
-    
+
     // Set cached voices into API state if they exist
     if (s.cachedVoices) {
         setFetchedVoices(s.cachedVoices);
@@ -195,20 +197,57 @@ jQuery(async () => {
     eventSource.on(event_types.MESSAGE_UPDATED, onMessageRendered);
 
     // Process existing messages on chat load
-    eventSource.on(event_types.CHAT_CHANGED, () => {
-        // Small delay to let messages render
-        setTimeout(() => {
-            const context = getContext();
-            document.querySelectorAll("div.mes").forEach(mes => {
-                const mesId = mes.getAttribute("mesid");
-                let chatMsg = null;
-                if (context && context.chat) {
-                    chatMsg = context.chat[mesId] || context.chat[parseInt(mesId, 10)];
-                }
-                processMessageElement(mes, chatMsg);
-            });
-        }, 500);
+    /*     eventSource.on(event_types.CHAT_CHANGED, () => {
+            // Small delay to let messages render
+            setTimeout(() => {
+                const context = getContext();
+                document.querySelectorAll("div.mes").forEach(mes => {
+                    const mesId = mes.getAttribute("mesid");
+                    let chatMsg = null;
+                    if (context && context.chat) {
+                        chatMsg = context.chat[mesId] || context.chat[parseInt(mesId, 10)];
+                    }
+                    processMessageElement(mes, chatMsg);
+                    // Restore quote TTS players from metadata
+                    restoreQuoteTTSFromMetadata(mes, chatMsg);
+                });
+            }, 500);
+        }); */
+
+    // ── Inject Quote Extract button into extraMesButtons via event delegation ──
+    $(document).on('click', '.gsvi_quote_extract', function (e) {
+        e.stopPropagation();
+        const mesDiv = $(this).closest('.mes');
+        const mesId = mesDiv.attr('mesid');
+        if (!mesId) return;
+
+        const context = getContext();
+        if (!context || !context.chat) return;
+        const chatMsg = context.chat[mesId] || context.chat[parseInt(mesId, 10)];
+        const rawText = chatMsg ? chatMsg.mes : '';
+
+        const s = getSettings();
+        const quotes = extractQuotes(rawText, s.quoteStyle || 'double');
+        openQuoteSelectModal(quotes, mesId, chatMsg);
     });
+
+    // Inject button into every message's extraMesButtons
+    const injectQuoteButton = () => {
+        document.querySelectorAll('.extraMesButtons').forEach(container => {
+            if (container.querySelector('.gsvi_quote_extract')) return;
+            const btn = document.createElement('div');
+            btn.title = '引号语音提取';
+            btn.className = 'mes_button gsvi_quote_extract fa-solid fa-volume-high';
+            btn.setAttribute('data-i18n', '[title]Extract quoted text for TTS');
+            container.appendChild(btn);
+        });
+    };
+
+    // Inject on initial load and after new messages
+    injectQuoteButton();
+    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, () => setTimeout(injectQuoteButton, 100));
+    eventSource.on(event_types.USER_MESSAGE_RENDERED, () => setTimeout(injectQuoteButton, 100));
+    eventSource.on(event_types.CHAT_CHANGED, () => setTimeout(injectQuoteButton, 600));
 
     console.log(`${LOG} Extension loaded.`);
 });

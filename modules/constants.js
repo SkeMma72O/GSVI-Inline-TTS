@@ -40,4 +40,5 @@ export const defaultSettings = {
     characterVoices: {},
     testVoiceId: "",
     testEmotion: "",
+    quoteStyle: "double", // double | cjk | all
 };

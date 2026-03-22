@@ -56,20 +56,20 @@ export function buildSettingsHtml() {
             <label>文本语言</label>
             <select id="gsvi_text_lang" class="text_pole">
                 ${[
-                  '中文',
-                  '英语',
-                  '日语',
-                  '粤语',
-                  '韩语',
-                  '中英混合',
-                  '日英混合',
-                  '粤英混合',
-                  '韩英混合',
-                  '多语种混合',
-                  '多语种混合(粤语)',
-                ]
-                  .map(l => `<option value="${l}" ${s.textLang === l ? 'selected' : ''}>${l}</option>`)
-                  .join('')}
+      '中文',
+      '英语',
+      '日语',
+      '粤语',
+      '韩语',
+      '中英混合',
+      '日英混合',
+      '粤英混合',
+      '韩英混合',
+      '多语种混合',
+      '多语种混合(粤语)',
+    ]
+      .map(l => `<option value="${l}" ${s.textLang === l ? 'selected' : ''}>${l}</option>`)
+      .join('')}
             </select>
         </div>
 
@@ -91,8 +91,8 @@ export function buildSettingsHtml() {
             <label>文本切分</label>
             <select id="gsvi_split_method" class="text_pole">
                 ${['不切', '凑四句一切', '凑50字一切', '按中文句号。切', '按英文句号.切', '按标点符号切']
-                  .map(m => `<option value="${m}" ${(s.textSplitMethod || '') === m ? 'selected' : ''}>${m}</option>`)
-                  .join('')}
+      .map(m => `<option value="${m}" ${(s.textSplitMethod || '') === m ? 'selected' : ''}>${m}</option>`)
+      .join('')}
             </select>
         </div>
 
@@ -111,6 +111,14 @@ export function buildSettingsHtml() {
         <div class="gsvi-settings-row">
             <label>播放按钮主题色</label>
             <input id="gsvi_theme_color" type="color" value="${s.themeColor}" style="width: 40px; height: 24px; padding: 0; border: none; background: none; cursor: pointer;" />
+        </div>
+        <div class="gsvi-settings-row">
+            <label>单独提取时引号风格</label>
+            <select id="gsvi_quote_style" class="text_pole">
+                <option value="double" ${(s.quoteStyle || 'double') === 'double' ? 'selected' : ''}>双引号 ""/""</option>
+                <option value="cjk" ${s.quoteStyle === 'cjk' ? 'selected' : ''}>方括引号 「」</option>
+                <option value="all" ${s.quoteStyle === 'all' ? 'selected' : ''}>全部匹配</option>
+            </select>
         </div>
         <div class="gsvi-toggle-row">
             <label>保存音频到服务器</label>
@@ -296,6 +304,12 @@ export function bindSettingsEvents() {
   // Save locally toggle
   $('#gsvi_save_to_server').on('change', function () {
     s.saveToServer = $(this).prop('checked');
+    saveSettings();
+  });
+
+  // Quote style
+  $('#gsvi_quote_style').on('change', function () {
+    s.quoteStyle = $(this).val();
     saveSettings();
   });
 
@@ -529,8 +543,8 @@ function openPromptManagerModal() {
       const emoChips =
         emoList.length > 0
           ? emoList
-              .map(e => `<div class="gsvi-chip emo-chip" data-char="${charName}" data-val="${e}">${e}</div>`)
-              .join('')
+            .map(e => `<div class="gsvi-chip emo-chip" data-char="${charName}" data-val="${e}">${e}</div>`)
+            .join('')
           : `<span style="font-size:11px;opacity:0.5;">（无情感数据）</span>`;
 
       genPanelHtml += `
